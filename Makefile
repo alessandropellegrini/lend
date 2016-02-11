@@ -17,8 +17,7 @@
 #CC=x86_64-w64-mingw32-gcc
 
 # the -m32 is just for the test program
-CFLAGS=-m32 -Wall -ansi -Os
-LDFLAGS=-m32
+CFLAGS=-Wall -ansi -Os
 
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)

@@ -16,8 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __LD32_H__
-#define __LD32_H__
+#pragma once
 
 /* implemented tables */
 #define PREFIX_T    1
@@ -250,5 +249,3 @@ const static unsigned int data66_t[] = {
 
 /* CHECK_MEM67 */
 #define CHECK_MEM67(v)  (((v)&0xfc)==0xa0)
-
-#endif
