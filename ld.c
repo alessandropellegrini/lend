@@ -1,5 +1,6 @@
 /*
 x86 Length Disassembler.
+Copyright (C) 2016 Alessandro Pellegrini
 Copyright (C) 2013 Byron Platt
 
 This program is free software: you can redistribute it and/or modify
@@ -16,31 +17,49 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ld32.h"
+#include "ld.h"
 
 /* length_disasm */
-unsigned int length_disasm(void * opcode0) {
+unsigned int length_disasm(void *opcode0, char mode) {
 
-    unsigned char* opcode = opcode0;
+    unsigned char *opcode = opcode0;
 
     unsigned int flag = 0;
     unsigned int ddef = 4, mdef = 4;
     unsigned int msize = 0, dsize = 0;
 
-    unsigned char op, modrm, mod, rm;
+    unsigned char op, op1, modrm, mod, rm, rex;
 
 prefix:
+    op1 = *(opcode+1);
     op = *opcode++;
 
-    /* prefix */
+    /* prefix */   
     if (CHECK_PREFIX(op)) {
         if (CHECK_PREFIX_66(op)) ddef = 2;
         else if (CHECK_PREFIX_67(op)) mdef = 2;
         goto prefix;
     }
+    
+    /* Possible REX prefixes, which come after legacy prefixes for SIMD instructions
+     * Moreover, multiple REX prefixes could be present. Although the behaviour should
+     * be undefined, most CPUs consider only the last one. */
+    if (mode == MODE_X64 && CHECK_REX(op)) {
+	    rex = op;
+	    goto prefix;
+    }
+    
+    /* three byte opcode */
+    if (CHECK_0F(op) && (CHECK_38(op1) || CHECK_3A(op1) )) {
+	opcode += 2;
+	op = *opcode;
+	if (CHECK_MODRM2(op)) flag++;
+        if (CHECK_DATA12(op)) dsize++;
+        if (CHECK_DATA662(op)) dsize += ddef;
+    }
 
     /* two byte opcode */
-    if (CHECK_0F(op)) {
+    else if (CHECK_0F(op)) {
         op = *opcode++;
         if (CHECK_MODRM2(op)) flag++;
         if (CHECK_DATA12(op)) dsize++;

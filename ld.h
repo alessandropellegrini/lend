@@ -1,5 +1,6 @@
 /*
 x86 Length Disassembler.
+Copyright (C) 2016 Alessandro Pellegrini
 Copyright (C) 2013 Byron Platt
 
 This program is free software: you can redistribute it and/or modify
@@ -18,6 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+/* Switch between 32-bit and 64-bit implementations */
+#define MODE_X32	1
+#define MODE_X64	2
+
 /* implemented tables */
 #define PREFIX_T    1
 #define MODRM2_T    2
@@ -32,7 +37,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 /* length_disasm */
-unsigned int length_disasm(void* opcode0);
+unsigned int length_disasm(void* opcode0, char mode);
+
+/* x64 REX prefix handling */
+#define CHECK_REX(v)    (((v) >> 4) == 0x4)
 
 /* table macros */
 #ifdef USE_T
@@ -89,6 +97,12 @@ const static unsigned int prefix_t[] = {
 
 /* CHECK_0F */
 #define CHECK_0F(v)         ((v)==0x0f)
+
+/* CHECK_38 */
+#define CHECK_38(v)         ((v)==0x38)
+
+/* CHECK_38 */
+#define CHECK_3A(v)         ((v)==0x3A)
 
 /* CHECK_MODRM2 */
 #if defined(USE_T) && (USE_T & MODRM2_T)

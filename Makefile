@@ -22,7 +22,7 @@ CFLAGS=-Wall -ansi -Os
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
 
-ld32test: $(OBJS)
+ldtest: $(OBJS)
 
 clean:
 	rm -f $(OBJS)

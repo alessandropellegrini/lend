@@ -1,3 +1,4 @@
 *.o
-ld32test
-ld32test.exe
+a.out
+ldtest
+ldtest.exe
