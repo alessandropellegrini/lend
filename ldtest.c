@@ -56,8 +56,8 @@ unsigned char byte_64[] = {0x48,0x89,0x04,0x48, /* mov %rax,(%rax,%rcx,2) */
                            0xe7,0xe8,0x78,0x7e,0x07,0x00,0xf0,0x41,0xff,0x4c,0x24,0x10,0x74,0x02,
                            0xeb,0x8e,0x4c,0x89,0xe7,0xe8,0x36,0x87,0xfd,0xff,0xeb,0x84,0x0f,0x1f,
                            0x40,0x00};
-                           
-unsigned char byte_32[] = {0x55, /* push %ebp */ 
+
+unsigned char byte_32[] = {0x55, /* push %ebp */
                            0x31,0xD2, /* xor %edx, %edx */
                            0x89,0xE5, /* mov %esp, %ebp */
                            0x8B,0x45,0x08, /* mov 0x8(%ebp), %eax */
@@ -89,7 +89,7 @@ int main(void) {
 			printf("%02x ", *opcode++);
 		printf("\n");
     }
-    
+
     printf("\n*** Lenght disassemblying of x32 code ***\n");
     opcode = byte_32;
     for (i=0; i < sizeof(byte_32); i += length) {
@@ -99,6 +99,6 @@ int main(void) {
 			printf("%02x ", *opcode++);
 		printf("\n");
     }
-    
+
     return 0;
 }

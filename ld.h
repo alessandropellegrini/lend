@@ -23,27 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MODE_X32	1
 #define MODE_X64	2
 
-/* implemented tables */
-#define PREFIX_T    1
-#define MODRM2_T    2
-#define MODRM_T     4
-#define DATA1_T     8
-#define DATA2_T     16
-#define DATA66_T    32
-
-/* configure tables */
-#ifndef USE_T
-#define USE_T       (MODRM2_T|MODRM_T|DATA1_T|DATA66_T)
-#endif
-
 /* length_disasm */
 unsigned int length_disasm(void* opcode0, char mode);
 
-/* x64 REX prefix handling */
-#define CHECK_REX(v)    (((v) >> 4) == 0x4)
-
 /* table macros */
-#ifdef USE_T
 #define BITMASK32(                                                             \
     b00,b01,b02,b03,b04,b05,b06,b07,                                           \
     b08,b09,b0a,b0b,b0c,b0d,b0e,b0f,                                           \
@@ -60,10 +43,8 @@ unsigned int length_disasm(void* opcode0, char mode);
     (b1c<<0x1c)|(b1d<<0x1d)|(b1e<<0x1e)|(b1f<<0x1f)                            \
 )
 #define CHECK_TABLE(t, v)   ((t[(v)>>5]>>((v)&0x1f))&1)
-#endif
 
 /* CHECK_PREFIX */
-#if defined(USE_T) && (USE_T & PREFIX_T)
 const static unsigned int prefix_t[] = {
            /* 0 1 2 3 4 5 6 7  8 9 a b c d e f */
     BITMASK32(0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,  /* 0 */
@@ -84,10 +65,9 @@ const static unsigned int prefix_t[] = {
               1,0,1,1,0,0,0,0, 0,0,0,0,0,0,0,0)  /* f */
 };
 #define CHECK_PREFIX(v) CHECK_TABLE(prefix_t, v)
-#else
-#define CHECK_PREFIX(v)                                                        \
-    (((v)&0xe7)==0x26||((v)&0xfc)==0x64||(v)==0xf0||(v)==0xf2||(v)==0xf3)
-#endif
+
+/* x64 REX prefix handling */
+#define CHECK_REX(v)    (((v)>>4)==0x4)
 
 /* CHECK_PREFIX_66 */
 #define CHECK_PREFIX_66(v)  ((v)==0x66)
@@ -102,10 +82,9 @@ const static unsigned int prefix_t[] = {
 #define CHECK_38(v)         ((v)==0x38)
 
 /* CHECK_38 */
-#define CHECK_3A(v)         ((v)==0x3A)
+#define CHECK_3A(v)         ((v)==0x3a)
 
 /* CHECK_MODRM2 */
-#if defined(USE_T) && (USE_T & MODRM2_T)
 const static unsigned int modrm2_t[] = {
            /* 0 1 2 3 4 5 6 7  8 9 a b c d e f */
     BITMASK32(1,1,1,1,0,0,0,0, 0,0,0,0,0,0,0,0,  /* 0 */
@@ -126,14 +105,6 @@ const static unsigned int modrm2_t[] = {
               0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0)  /* f */
 };
 #define CHECK_MODRM2(v) CHECK_TABLE(modrm2_t, v)
-#else
-#define CHECK_MODRM2(v) (__extension__  ({                                     \
-    register BYTE __a=(v)&0xfc, __b=(v)&0xfe;                                  \
-    ((v)&0xf0)==0x90||((v)&0xf8)==0xb0||((v)&0xf6)==0xa4||                     \
-    __a==0x00||__a==0xbc||__b==0xba||__b==0xc0||                               \
-    (v)==0xa3||(v)==0xab||(v)==0xaf;                                           \
-}))
-#endif
 
 /* CHECK_DATA12 */
 #define CHECK_DATA12(v)     ((v)==0xa4||(v)==0xac||(v)==0xba)
@@ -142,7 +113,6 @@ const static unsigned int modrm2_t[] = {
 #define CHECK_DATA662(v)    (((v)&0xf0)==0x80)
 
 /* CHECK_MODRM */
-#if defined(USE_T) && (USE_T & MODRM_T)
 const static unsigned int modrm_t[] = {
            /* 0 1 2 3 4 5 6 7  8 9 a b c d e f */
     BITMASK32(1,1,1,1,0,0,0,0, 1,1,1,1,0,0,0,0,  /* 0 */
@@ -163,20 +133,11 @@ const static unsigned int modrm_t[] = {
               0,0,0,0,0,0,1,1, 0,0,0,0,0,0,1,1)  /* f */
 };
 #define CHECK_MODRM(v) CHECK_TABLE(modrm_t, v)
-#else
-#define CHECK_MODRM(v) (__extension__  ({                                      \
-    register BYTE __a=(v)&0xfc, __b=(v)&0xfe;                                  \
-    ((v)&0xc4)==0x00||((v)&0xf0)==0x80||((v)&0xf8)==0xd8||((v)&0xf6)==0xf6||   \
-    __a==0xc4||__a==0xd0||__b==0x62||__b==0xc0||                               \
-    (v)==0x69||(v)==0x6b;                                                      \
-}))
-#endif
 
 /* CHECK_TEST */
 #define CHECK_TEST(v)   ((v)==0xf6||(v)==0xf7)
 
 /* CHECK_DATA1 */
-#if defined(USE_T) && (USE_T & DATA1_T)
 const static unsigned int data1_t[] = {
            /* 0 1 2 3 4 5 6 7  8 9 a b c d e f */
     BITMASK32(0,0,0,0,1,0,0,0, 0,0,0,0,1,0,0,0,  /* 0 */
@@ -197,17 +158,8 @@ const static unsigned int data1_t[] = {
               0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0)  /* f */
 };
 #define CHECK_DATA1(v) CHECK_TABLE(data1_t, v)
-#else
-#define CHECK_DATA1(v) (__extension__  ({                                      \
-    register BYTE __a=(v)&0xf8, __b=(v)&0xfe;                                  \
-    ((v)&0xf0)==0x70||((v)&0xc7)==0x04||                                       \
-    __a==0xb0||__a==0xe0||__b==0x6a||__b==0x82||__b==0xc0||__b==0xd4||         \
-    (v)==0x80||(v)==0xa8||(v)==0xc6||(v)==0xc8||(v)==0xcd||(v)==0xeb;          \
-}))
-#endif
 
 /* CHECK_DATA2 */
-#if defined(USE_T) && (USE_T & DATA2_T)
 const static unsigned int data2_t[] = {
            /* 0 1 2 3 4 5 6 7  8 9 a b c d e f */
     BITMASK32(0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,  /* 0 */
@@ -228,13 +180,8 @@ const static unsigned int data2_t[] = {
               0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0)  /* f */
 };
 #define CHECK_DATA2(v) CHECK_TABLE(data2_t, v)
-#else
-#define CHECK_DATA2(v)                                                         \
-    ((v)==0x9a||(v)==0xc2||(v)==0xc8||(v)==0xca||(v)==0xea)
-#endif
 
 /* CHECK_DATA66 */
-#if defined(USE_T) && (USE_T & DATA66_T)
 const static unsigned int data66_t[] = {
            /* 0 1 2 3 4 5 6 7  8 9 a b c d e f */
     BITMASK32(0,0,0,0,0,1,0,0, 0,0,0,0,0,1,0,0,  /* 0 */
@@ -255,11 +202,6 @@ const static unsigned int data66_t[] = {
               0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0)  /* f */
 };
 #define CHECK_DATA66(v) CHECK_TABLE(data66_t, v)
-#else
-#define CHECK_DATA66(v)                                                        \
-    (((v)&0xc7)==0x05||((v)&0xf8)==0xb8||((v)&0x7e)==0x68||                    \
-    (v)==0x81||(v)==0x9a||(v)==0xa9||(v)==0xc7||(v)==0xea)
-#endif
 
 /* CHECK_MEM67 */
 #define CHECK_MEM67(v)  (((v)&0xfc)==0xa0)

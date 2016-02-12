@@ -34,13 +34,13 @@ prefix:
     op1 = *(opcode+1);
     op = *opcode++;
 
-    /* prefix */   
+    /* prefix */
     if (CHECK_PREFIX(op)) {
         if (CHECK_PREFIX_66(op)) ddef = 2;
         else if (CHECK_PREFIX_67(op)) mdef = 2;
         goto prefix;
     }
-    
+
     /* Possible REX prefixes, which come after legacy prefixes for SIMD instructions
      * Moreover, multiple REX prefixes could be present. Although the behaviour should
      * be undefined, most CPUs consider only the last one. */
@@ -48,7 +48,7 @@ prefix:
 	    rex = op;
 	    goto prefix;
     }
-    
+
     /* three byte opcode */
     if (CHECK_0F(op) && (CHECK_38(op1) || CHECK_3A(op1) )) {
 	opcode += 2;
