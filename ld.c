@@ -28,7 +28,7 @@ unsigned int length_disasm(void *opcode0, char mode) {
     unsigned int ddef = 4, mdef = 4;
     unsigned int msize = 0, dsize = 0;
 
-    unsigned char op, op1, modrm, mod, rm, rex;
+    unsigned char op, op1, modrm, mod, rm, rex = 0;
 
 prefix:
     op1 = *(opcode+1);
@@ -53,9 +53,6 @@ prefix:
     if (CHECK_0F(op) && (CHECK_38(op1) || CHECK_3A(op1) )) {
 	opcode += 2;
 	op = *opcode;
-	if (CHECK_MODRM2(op)) flag++;
-        if (CHECK_DATA12(op)) dsize++;
-        if (CHECK_DATA662(op)) dsize += ddef;
     }
 
     /* two byte opcode */
@@ -91,6 +88,12 @@ prefix:
                 if (rm == 0x05 && mod == 0x00) msize += 4;
             }
         }
+    }
+
+    /* REX.W causes 66h to be ignored */
+    if (CHECK_REXW(rex)) {
+        if(CHECK_IMM64(op)) dsize = 8;
+        if(CHECK_OFF64(op)) msize = 8;
     }
 
     opcode += msize + dsize;

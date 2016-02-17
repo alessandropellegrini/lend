@@ -68,6 +68,13 @@ const static unsigned int prefix_t[] = {
 
 /* x64 REX prefix handling */
 #define CHECK_REX(v)    (((v)>>4)==0x4)
+#define CHECK_REXW(v)   ((v)&0x08)
+
+/* Check for movs which handle imm64 */
+#define CHECK_IMM64(v)	(((v)&0xf8)==0xb8)
+
+/* Check for movs which handles moffs64 */
+#define CHECK_OFF64(v)	((v)==0xa1)
 
 /* CHECK_PREFIX_66 */
 #define CHECK_PREFIX_66(v)  ((v)==0x66)
