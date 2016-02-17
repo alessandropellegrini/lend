@@ -15,9 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#CC=x86_64-w64-mingw32-gcc
-
-# the -m32 is just for the test program
 CFLAGS=-Wall -ansi -Os
 
 SRCS=$(wildcard *.c)
