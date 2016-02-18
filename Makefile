@@ -15,12 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-CFLAGS=-Wall -ansi -Os
+CFLAGS=-Wall -ansi -Os -g
+CC=gcc
+LIB_OBJ=ld.o
+TEST_OBJ=ldtest.o
 
-SRCS=$(wildcard *.c)
-OBJS=$(SRCS:.c=.o)
+all: library test
 
-ldtest: $(OBJS)
+library: $(LIB_OBJ)
+	ar -cvq liblend.a $(LIB_OBJ)
+
+test: $(TEST_OBJ)
+	$(CC) $(TEST_OBJ) -L . -llend -lbfd -lopcodes -liberty -lz -ldl -lintl -o ldtest
 
 clean:
-	rm -f $(OBJS)
+	rm -f $(TEST_OBJ) $(LIB_OBJ) liblend.a
