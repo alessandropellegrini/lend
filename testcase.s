@@ -1,0 +1,74 @@
+sub    $0x28,%rsp
+lea    0xa3875(%rip),%rcx
+callq  1004
+xor    %r8d,%r8d
+psignb %xmm0,%xmm1
+nopw 0x0(%rax,%rax,1)
+movabs $0xaaa,%rax
+mov %rax,(%rax,%rcx,2)
+jmpq   *1004
+lock addl $0xefcdab89,0x12345678(%rsi,%rcx,4)
+cmpq   $0x0,0xa9190(%rip)
+callq  *0x1ab6d9(%rip)
+mov    %rax,%rcx
+nopw   %cs:0x0(%rax,%rax,1)
+xor    %eax,%eax
+retq
+testb  $0x10,0x20(%rdx)
+movsbl %bpl,%r14d
+add    $0x38,%rsp
+cmove  %edi,%r13d
+movzbl %bl,%ecx
+jae    100401372
+sete   %dl
+cmovne %edx,%r8d
+test   $0x1,%al
+push   %r13
+push   %r12
+xchg   %ax,%ax
+movsbq 0x1(%rbx),%rdx
+repz retq
+nopw %cs:0x0(%rax,%rax,1)
+movabs $0xaaaaaaaaaaaaaaab,%rax
+incq   0x8(%r9)
+sar    $0x3,%r9
+imul   %rax,%r9
+bt     %ebx,%r14d
+blendvpd %xmm0,%xmm1,%xmm2
+vblendvpd %xmm0,%xmm0,%xmm1,%xmm2
+vblendvpd %xmm0,%xmm1,%xmm2,%xmm2
+vblendvpd %ymm0,%ymm0,%ymm1,%ymm2
+vblendvpd %ymm0,%ymm1,%ymm2,%ymm2
+vcvtsi2sd %ecx,%xmm10,%xmm9
+vcvtsi2sd %rcx,%xmm10,%xmm9
+vcvtsi2sdl (%rdi),%xmm10,%xmm9
+vcvtsi2sdq (%rdi),%xmm10,%xmm9
+vpextrb $0x33,%xmm1,(%rax)
+vpextrw $0x33,%xmm1,(%rax)
+vpextrd $0x33,%xmm1,(%rax)
+vpextrq $0x33,%xmm1,(%rax)
+vpextrb $0x33,%xmm1,%eax
+vpextrw $0x33,%xmm1,%eax
+vpextrd $0x33,%xmm1,%eax
+vpextrq $0x33,%xmm1,%rax
+vpextrb $0x33,%xmm1,%eax
+vpextrw $0x33,%xmm1,%eax
+vpextrd $0x33,%xmm1,%eax
+vcvtpd2ps %xmm1,%xmm0
+vcvtpd2psx (%rsi),%xmm0
+vcvtpd2ps %ymm1,%xmm0
+vcvtpd2psy (%rsi),%xmm0
+vcvtpd2dq %xmm1,%xmm0
+vcvtpd2dqx (%rsi),%xmm0
+vcvtpd2dq %ymm1,%xmm0
+vcvtpd2dqy (%rsi),%xmm0
+vcvttpd2dq %xmm1,%xmm0
+vcvttpd2dqx (%rsi),%xmm0
+vcvttpd2dq %ymm1,%xmm0
+vcvttpd2dqy (%rsi),%xmm0
+add %gs:0x7ef7b9a6(%rip),%rbx
+lock decl 0x4c(%r13)
+movl $0x0,0x28(%r12)
+movzx (%esi, %edx, 1), %ecx
+lea -1(%eax), %ebx
+

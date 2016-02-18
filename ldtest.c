@@ -1,7 +1,6 @@
 /*
 x86 Length Disassembler test.
 Copyright (C) 2016 Alessandro Pellegrini
-Copyright (C) 2013 Byron Platt
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,134 +17,178 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
+#include <errno.h>
 
-#include "ld.h"
+#define PACKAGE "BFD" /* This fools bfd.h into thinking that we're using autoconf */
+#include <bfd.h>
+#include <dis-asm.h>
 
-/* This is some test code, taken from a disassembly of the Linux Kernel scheduler
- * plus other x64 instructions and three-byte opcodes, for the purpose of testing */
-unsigned char byte_64[] = {0xf0,0x3e,0x81,0x84,0x8e,0x78,0x56,0x34,0x12,0x89,0xab,0xcd,0xef, /* lock add DWORD PTR ds:[rsi+rcx*4+0x12345678],0xefcdab89 */
-			   0x48,0x89,0x04,0x48, /* mov %rax,(%rax,%rcx,2) */
-			   0x48,0xb8,0xaa,0x0a,0x00,0x00,0x00,0x00,0x00,0x00, /* movabs $0xaaa,%rax */
-			   0x48,0xa1,0xaa,0x0a,0x00,0x00,0x00,0x00,0x00,0x00, /* movabs 0xaaa,%rax */
-			   0x48,0xbb,0xaa,0x0a,0x00,0x00,0x00,0x00,0x00,0x00, /* movabs $0xaaa,%rbx */
-			   0x66,0x0f,0x38,0x08,0xc8, /* psignb %xmm0,%xmm1 */
-			   /* Linux 4.1 x64 finish_task_switch() from here on */
-			   0x66,0x0f,0x1f,0x44,0x00,0x00, /* nopw 0x0(%rax,%rax,1) */
-			   0x55, /* push %rbp */
-			   0x48,0x89,0xe5, /* mov %rsp,%rbp */
-			   0x41,0x56, /* push %r14 */
-			   0x41,0x55, /* push %r13 */
-			   0x41,0x54, /* push %r12 */
-			   0x49,0x89,0xfc, /* mov %rdi,%r12 */
-			   0x53, /* push %rbx */
-			   0x48,0xc7,0xc3,0xc0,0x5d,0x01,0x00, /* mov $0x15dc0,%rbx */
-			   0x65,0x48,0x03,0x1d,0xa6,0xb9,0xf7,0x7e, /* add %gs:0x7ef7b9a6(%rip),%rbx */
-			   0x4c,0x8b,0xab,0x30,0x09,0x00,0x00, /* mov 0x930(%rbx),%r13*/
-			   0x48,0xc7,0x83,0x30,0x09,0x00,0x00,0x00,0x00,0x00,0x00, /* movq $0x0,0x930(%rbx) */
-			   0x4c,0x8b,0x37, /* mov (%rdi),%r14 */
-			   0x65,0x48,0x8b,0x34,0x25,0xc0,0xb8,0x00,0x00, /* mov %gs:0xb8c0,%rsi */
-			   0x0f,0x1f,0x44,0x00,0x00, /* nopl 0x0(%rax,%rax,1) */
-			   0x41,0xc7,0x44,0x24,0x28,0x00,0x00,0x00,0x00, /* movl $0x0,0x28(%r12) */
-			   0xe9,0x2d,0x00,0x00,0x00, /* jmp */
-			   0x66,0x83,0x03,0x02, /* addw $0x2,(%rbx) */
-			   0xfb, /* sti */
-			   0x66,0x0f,0x1f,0x44,0x00,0x00, /* nop */
-			   0x4d,0x85,0xed, /* test %r13,%r13 */
-			   0x74,0x07, /* je 0xffffffff8108e7ca */
-			   0xf0,0x41,0xff,0x4d,0x4c, /* lock decl 0x4c(%r13) */
-			   0x74,0x46, /* je 0xffffffff8108e810 */
-			   0x49,0x83,0xfe,0x40, /* cmp $0x40,%r14 */
-			   0x74,0x4a, /* je 0xffffffff8108e81a */
-                           0x48,0x89,0xd8, /* mov %rbx,%rax */
-                           0x5b, /* pop %rbx */
-                           0x41,0x5c, /* pop %r12 */
-                           0x41,0x5d, /* pop %r13 */
-                           0x41,0x5e, /* pop %r14 */
-                           0x5d, /* pop %rbp */
-                           0xc3, /* ret */
-                           0x0f,0x1f,0x40,0x00, /* nopl 0x0(%rax) */
-                           0xb8,0x02,0x00,0x00,0x00, /* mov $0x2,%eax */
-                           0xf0,0x66,0x0f,0xc1,0x03,
-                           0xa8,0x01,
-                           0x74,0xc9,
-                           0x83,0xe0,0xfe,
-                           0x48,0x89,0xdf,
-                           0x8d,0x70,0x02,
-                           0x0f,0xb7,0xf6,
-                           0xe8,0xa1,0x27,0xf8,0xff,0x66,0x90,
-                           0xeb,0xb4,
-                           0x0f,0x1f,0x44,0x00,0x00,
-                           0xe8,0xb3,0xf7,0x0b,0x00,
-                           0xeb,0x96,
-                           0x90,
-                           0x4c,0x89,0xef,
-                           0xe8,0x18,0x82,0xfd,0xff,
-                           0xeb,0xb0,
-                           0x49,0x8b,0x44,0x24,0x60,
-                           0x48,0x8b,0x80,0x98,0x00,0x00,0x00,
-                           0x48,0x85,0xc0,
-                           0x74,0x05,
-                           0x4c,0x89,0xe7,
-                           0xff,0xd0,
-                           0x4c,0x89,0xe7,
-                           0xe8,0x78,0x7e,0x07,0x00,
-                           0xf0,0x41,0xff,0x4c,0x24,0x10,
-                           0x74,0x02,
-                           0xeb,0x8e,
-                           0x4c,0x89,0xe7,
-                           0xe8,0x36,0x87,0xfd,0xff,
-                           0xeb,0x84,
-                           0x0f,0x1f,0x40,0x00};
+#include "lend.h"
 
-unsigned short int check_64[] =
-	{13,4,10,10,10,5,6,1,3,2,2,2,3,1,7,8,7,11,3,9,5,9,5,4,1,6,3,2,5,2,
-	 4,2,3,1,2,2,2,1,1,4,5,5,2,2,3,3,3,3,7,2,1,3,5,2,5,7,3,2,3,2,3,
-	 5,6,2,2,3,5,2,4};
+/* Buffer to keep track of a disassembled instruction mnemonic, used to
+ * display instructions that are handled incorrectly by liblend */
+struct asm_insn {
+	char mnemonic[16];
+	char src[32];
+	char dest[32];
+	char arg[32];
+} curr_insn;
 
-unsigned char byte_32[] = {0xf0,0x3e,0x81,0x84,0x8e,0x78,0x56,0x34,0x12,0x89,0xab,0xcd,0xef, /* lock add DWORD PTR ds:[esi+ecx*4+0x12345678],0xefcdab89 */
-			   0x55, /* push %ebp */
-                           0x31,0xD2, /* xor %edx, %edx */
-                           0x89,0xE5, /* mov %esp, %ebp */
-                           0x8B,0x45,0x08, /* mov 0x8(%ebp), %eax */
-                           0x56, /* push %esi */
-                           0x8B,0x75,0x0C, /* mov 0xc(%ebp), %esi */
-                           0x53, /* push %ebx */
-                           0x8D,0x58,0xFF, /* lea -1(%eax), %ebx */
-                           0x0F,0xB6,0x0C,0x16, /* movzx (%esi, %edx, 1), %ecx */
-                           0x88,0x4C,0x13,0x01, /* mov %cl, 0x1(%ebx, %edx, 1) */
-                           0x42, /* inc %edx <--- This is a REX prefix if interpreted in x64 mode */
-                           0x84,0xC9, /* test %cl, %cl */
-                           0x75,0xF1, /* jnz -14 */
-                           0x5B, /* pop %ebx */
-                           0x5E, /* pop esi */
-                           0x5D, /* pop %ebp */
-                           0xC3 /* ret */};
+/* Called by libopcodes to generate textual representation of a portion
+ * of a disassembled instruction */
+int disprintf(void *stream, const char *format, ...) {
+	va_list args;
+	char *str;
 
-int main(void) {
-    int i, j, check = 0;
-    unsigned char *opcode;
-    unsigned int length;
+	va_start(args, format);
+	str = va_arg(args, char *);
 
-    printf("*** Lenght disassemblying of x64 code ***\n");
-    opcode = byte_64;
-    for (i=0; i < sizeof(byte_64); i+=length) {
-        length = length_disasm(opcode, MODE_X64);
-		printf("%03d: ", i);
-		for(j = 0; j < length; j++)
-			printf("%02x ", *opcode++);
-		printf(" [expected: %d, found: %d]\n", check_64[check++], length);
-    }
+	/* libopcodes passes one mnem/operand per call, and src twice! */
+	if(!curr_insn.mnemonic[0]) {
+		strncpy(curr_insn.mnemonic, str, 15);
+	} else if(!curr_insn.src[0]) {
+		strncpy(curr_insn.src, str, 31);
+	} else if(!curr_insn.dest[0]) {
+		strncpy(curr_insn.dest, str, 31);
+		if(strncmp(curr_insn.dest, "DN", 2) == 0)
+			curr_insn.dest[0] = '\0';
+	} else {
+		if(!strcmp(curr_insn.src, curr_insn.dest)) {
+			/* src was passed twice */
+			strncpy(curr_insn.dest, str, 31);
+		} else {
+			strncpy(curr_insn.arg, str, 31);
+		}
+	}
+	va_end(args);
 
-    printf("\n*** Lenght disassemblying of x32 code ***\n");
-    opcode = byte_32;
-    for (i=0; i < sizeof(byte_32); i+=length) {
-        length = length_disasm(opcode, MODE_X32);
-		printf("%03d: ", i);
-		for(j = 0; j < length; j++)
-			printf("%02x ", *opcode++);
+	return 0;
+}
+
+/* Print the last disassembled instruction mnemonic */
+void print_insn(void) {
+	printf("\t%s", curr_insn.mnemonic);
+	if(curr_insn.src[0]) {
+		printf("\t%s", curr_insn.src);
+		if(curr_insn.dest[0]) {
+			printf(", %s", curr_insn.dest);
+			if(curr_insn.arg[0]) {
+				printf(", %s", curr_insn.arg);
+			}
+		}
+	}
+}
+
+/* Disassemble a code section in the given executable */
+static void disasm_section(bfd *b, asection *section, PTR data) {
+	int size;
+	char mode;
+	unsigned char *buf;
+	disassembler_ftype disassemble_fn;
+	static disassemble_info info = {0};
+	int libopcodes_length, liblend_length;
+	int i, bytes = 0;
+
+	/* Handle only code sections, avoid .plt and .got */
+	if(!(section->flags & SEC_CODE))
+		return;
+	if(!strncmp(".plt", section->name, 4) || !strncmp(".got", section->name, 4))
+		return;
+
+	/* Get the bytecode buffer */
+	size = bfd_section_size(b, section);
+	buf = calloc(size, 1);
+	if(!buf || !bfd_get_section_contents(b, section, buf, 0, size))
+		return;
+
+	printf("\n***Disassemblying section %s***\n\n", section->name);
+
+	/* Initialize bfd disassembler */
+	init_disassemble_info(&info, NULL, disprintf);
+	info.arch = bfd_get_arch(b);
+	info.mach = bfd_get_mach(b);
+	info.flavour = bfd_get_flavour(b);
+	info.endian = b->xvec->byteorder;
+	disassemble_init_for_target(&info);
+
+	/* Setup disassemble function */
+	if(info.mach == bfd_mach_x86_64) {
+		mode = MODE_X64;
+	} else if(info.mach == bfd_mach_i386_i386) {
+		mode = MODE_X32;
+	} else {
+		return;
+	}
+	disassemble_fn = disassembler(b);
+	info.section = section;
+	info.buffer = buf;
+	info.buffer_length = size;
+	info.buffer_vma = section->vma;
+
+	/* disassemble the current section */
+	while(bytes < info.buffer_length) {
+		/* call libopcodes disassembler */
+		memset(&curr_insn, 0, sizeof(struct asm_insn));
+		libopcodes_length = (*disassemble_fn)(info.buffer_vma + bytes, &info);
+		/* call liblend disassembler */
+		liblend_length = length_disasm(&info.buffer[bytes], mode);
+
+		/* if the length is different, highlight the text and print
+		 * the found and expected length. Continue using the length
+		 * taken from libopcodes, to be resilient to liblend errors */
+		if(libopcodes_length != liblend_length) {
+			printf("\e[31m");
+		}
+		for(i = 0; i < libopcodes_length; i++) {
+			printf("%02x ", info.buffer[bytes + i]);
+		}
+		if(libopcodes_length != liblend_length) {
+			printf("\e[0m ");
+			printf("[expected: %d - found: %d] - ", libopcodes_length, liblend_length);
+			print_insn();
+		}
 		printf("\n");
-    }
 
-    return 0;
+		bytes += libopcodes_length;
+	}
+
+	free(buf);
+}
+
+
+/* Opens an executable file with libbfd to disassemble it using both
+ * libopcodes and liblend, to compare the lengths of the instructions */
+int main(int argc, char **argv) {
+	struct stat s;
+	bfd *infile;
+
+	if(argc < 2) {
+		fprintf(stderr, "USage: %s target\n\ntarget is an x86 executable", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+	if(stat(argv[1], &s)) {
+		fprintf(stderr, "Error: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	bfd_init();
+
+	infile = bfd_openr(argv[1], NULL);
+	if(!infile) {
+		bfd_perror("Error on infile");
+		exit(EXIT_FAILURE);
+	}
+
+	if(bfd_check_format(infile, bfd_object)) {
+		bfd_map_over_sections(infile, disasm_section, NULL);
+	} else {
+		fprintf(stderr, "Error: file format not supported\n");
+		exit(EXIT_FAILURE);
+	}
+
+	bfd_close(infile);
+	return 0;
 }
