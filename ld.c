@@ -63,6 +63,7 @@ prefix:
 	    /* Three-byte 3A table */
 	    if(CHECK_3A(op)) {
 		op = *opcode++;
+		if(CHECK_MODRM3A(op)) flag++;
 	    }
 
 	    /* Two-byte table */
