@@ -34,6 +34,8 @@ static int count = 0;
 
 static int errors = 0;
 
+static int binning[15] = {0};
+
 /* Buffer to keep track of a disassembled instruction mnemonic, used to
  * display instructions that are handled incorrectly by liblend */
 struct asm_insn {
@@ -167,6 +169,7 @@ static void disasm_section(bfd *b, asection *section, PTR data) {
 
 		bytes += libopcodes_length;
 		count++;
+		binning[libopcodes_length-1]++;
 	}
 
 	free(buf);
@@ -178,6 +181,7 @@ static void disasm_section(bfd *b, asection *section, PTR data) {
 int main(int argc, char **argv) {
 	struct stat s;
 	bfd *infile;
+	int i;
 
 	if(argc < 2) {
 		fprintf(stderr, "USage: %s target\n\ntarget is an x86 executable", argv[0]);
@@ -204,6 +208,11 @@ int main(int argc, char **argv) {
 	}
 
 	printf("\n*** Total disassembly errors: %d\n", errors);
+
+	printf("\nInstruction length count:\n");
+	for(i = 0; i < 15; i++) {
+		printf("%02d: %d\n", i+1, binning[i]);
+	}
 
 	bfd_close(infile);
 	return 0;
