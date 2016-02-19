@@ -28,6 +28,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "lend.h"
 
+/* This variable can be used as a watchpoint to walk through the disassembly
+ * of a certain instruction */
+static int count = 0;
+
+static int errors = 0;
+
 /* Buffer to keep track of a disassembled instruction mnemonic, used to
  * display instructions that are handled incorrectly by liblend */
 struct asm_insn {
@@ -94,6 +100,7 @@ static void disasm_section(bfd *b, asection *section, PTR data) {
 	static disassemble_info info = {0};
 	int libopcodes_length, liblend_length;
 	int i, bytes = 0;
+	count = 0;
 
 	/* Handle only code sections, avoid .plt and .got */
 	if(!(section->flags & SEC_CODE))
@@ -133,6 +140,8 @@ static void disasm_section(bfd *b, asection *section, PTR data) {
 
 	/* disassemble the current section */
 	while(bytes < info.buffer_length) {
+		printf("%03d) ", count);
+
 		/* call libopcodes disassembler */
 		memset(&curr_insn, 0, sizeof(curr_insn));
 		libopcodes_length = (*disassemble_fn)(info.buffer_vma + bytes, &info);
@@ -144,6 +153,7 @@ static void disasm_section(bfd *b, asection *section, PTR data) {
 		 * taken from libopcodes, to be resilient to liblend errors */
 		if(libopcodes_length != liblend_length) {
 			printf("\e[31m");
+			errors++;
 		}
 		for(i = 0; i < libopcodes_length; i++) {
 			printf("%02x ", info.buffer[bytes + i]);
@@ -156,6 +166,7 @@ static void disasm_section(bfd *b, asection *section, PTR data) {
 		printf("\n");
 
 		bytes += libopcodes_length;
+		count++;
 	}
 
 	free(buf);
@@ -191,6 +202,8 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Error: file format not supported\n");
 		exit(EXIT_FAILURE);
 	}
+
+	printf("\n*** Total disassembly errors: %d\n", errors);
 
 	bfd_close(infile);
 	return 0;
