@@ -46,21 +46,24 @@ int disprintf(void *stream, const char *format, ...) {
 	va_start(args, format);
 	str = va_arg(args, char *);
 
-	/* libopcodes passes one mnem/operand per call, and src twice! */
-	if(!curr_insn.mnemonic[0]) {
-		strncpy(curr_insn.mnemonic, str, 15);
-	} else if(!curr_insn.src[0]) {
-		strncpy(curr_insn.src, str, 31);
-	} else if(!curr_insn.dest[0]) {
-		strncpy(curr_insn.dest, str, 31);
-		if(strncmp(curr_insn.dest, "DN", 2) == 0)
-			curr_insn.dest[0] = '\0';
-	} else {
-		if(!strcmp(curr_insn.src, curr_insn.dest)) {
-			/* src was passed twice */
+	/* libopcodes passes one mnem/operand per call, and src twice!
+	 * Sometimes it passess a null string (sic!) */
+	if(str != NULL) {
+		if(!curr_insn.mnemonic[0]) {
+			strncpy(curr_insn.mnemonic, str, 15);
+		} else if(!curr_insn.src[0]) {
+			strncpy(curr_insn.src, str, 31);
+		} else if(!curr_insn.dest[0]) {
 			strncpy(curr_insn.dest, str, 31);
+			if(strncmp(curr_insn.dest, "DN", 2) == 0)
+				curr_insn.dest[0] = '\0';
 		} else {
-			strncpy(curr_insn.arg, str, 31);
+			if(!strcmp(curr_insn.src, curr_insn.dest)) {
+				/* src was passed twice */
+				strncpy(curr_insn.dest, str, 31);
+			} else {
+				strncpy(curr_insn.arg, str, 31);
+			}
 		}
 	}
 	va_end(args);
