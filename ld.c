@@ -17,21 +17,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "lend.h"
 #include "ld.h"
 
 /* length_disasm */
 unsigned int length_disasm(void *opcode0, char mode) {
-
     unsigned char *opcode = opcode0;
 
     unsigned int flag = 0;
     unsigned int ddef = 4, mdef = 4;
     unsigned int msize = 0, dsize = 0;
 
-    unsigned char op, op1, modrm, mod, rm, rex = 0;
+    unsigned char op, modrm, mod, rm, rex = 0;
 
 prefix:
-    op1 = *(opcode+1);
     op = *opcode++;
 
     /* prefix */
@@ -41,7 +40,7 @@ prefix:
         goto prefix;
     }
 
-    /* Possible REX prefixes, which come after legacy prefixes for SIMD instructions
+    /* Possible REX prefixes, which come after legacy prefixes.
      * Moreover, multiple REX prefixes could be present. Although the behaviour should
      * be undefined, most CPUs consider only the last one. */
     if (mode == MODE_X64 && CHECK_REX(op)) {
@@ -49,18 +48,27 @@ prefix:
 	    goto prefix;
     }
 
-    /* three byte opcode */
-    if (CHECK_0F(op) && (CHECK_38(op1) || CHECK_3A(op1) )) {
-	opcode += 2;
-	op = *opcode;
-    }
+    /* two and three byte opcode */
+    if (CHECK_0F(op)) {
+	    op = *opcode++;
 
-    /* two byte opcode */
-    else if (CHECK_0F(op)) {
-        op = *opcode++;
-        if (CHECK_MODRM2(op)) flag++;
-        if (CHECK_DATA12(op)) dsize++;
-        if (CHECK_DATA662(op)) dsize += ddef;
+	    /* Three-byte 38 table */
+	    if(CHECK_38(op)) {
+		op = *opcode++;
+		if(CHECK_MODRM38(op)) flag++;
+	    } else
+
+	    /* Three-byte 3A table */
+	    if(CHECK_3A(op)) {
+		op = *opcode++;
+	    }
+
+	    /* Two-byte table */
+	    else {
+		if (CHECK_MODRM2(op)) flag++;
+		if (CHECK_DATA12(op)) dsize++;
+		if (CHECK_DATA662(op)) dsize += ddef;
+	    }
     }
 
     /* one byte opcode */
@@ -78,14 +86,22 @@ prefix:
         modrm = *opcode++;
         mod = modrm & 0xc0;
         rm  = modrm & 0x07;
+        printf("HAS MODRM - mod: %02x - rm: %02x\n", mod, rm);
         if (mod != 0xc0) {
             if (mod == 0x40) msize++;
             if (mod == 0x80) msize += mdef;
-            if (mdef == 2) {
+	    if (mdef == 2 && mode == MODE_X32) {
+		printf("mdef is 2\n");
                 if ((mod == 0x00) && (rm == 0x06)) msize += 2;
             } else {
-                if (rm == 0x04) rm = *opcode++ & 0x07;
-                if (rm == 0x05 && mod == 0x00) msize += 4;
+                if (rm == 0x04) {
+			printf("HAS SIB\n");
+			rm = *opcode++ & 0x07; /* rm is the sib */
+		}
+                if (rm == 0x05 && mod == 0x00) {
+			if(mdef == 2) msize += 2;
+			else msize += 4;
+		}
             }
         }
     }

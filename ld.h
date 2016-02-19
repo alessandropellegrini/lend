@@ -19,13 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-/* Switch between 32-bit and 64-bit implementations */
-#define MODE_X32	1
-#define MODE_X64	2
-
-/* length_disasm */
-unsigned int length_disasm(void* opcode0, char mode);
-
 /* table macros */
 #define BITMASK32(                                                             \
     b00,b01,b02,b03,b04,b05,b06,b07,                                           \
@@ -88,8 +81,30 @@ const static unsigned int prefix_t[] = {
 /* CHECK_38 */
 #define CHECK_38(v)         ((v)==0x38)
 
-/* CHECK_38 */
+/* CHECK_3A */
 #define CHECK_3A(v)         ((v)==0x3a)
+
+/* CHECK_MODRM38 */
+const static unsigned int modrm38_t[] = {
+           /* 0 1 2 3 4 5 6 7  8 9 a b c d e f */
+    BITMASK32(1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,  /* 0 */
+              1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1), /* 1 */
+    BITMASK32(1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,  /* 2 */
+              1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1), /* 3 */
+    BITMASK32(1,1,1,1,1,1,1,1, 0,0,0,0,1,1,1,1,  /* 4 */
+              1,1,1,1,0,1,0,0, 1,1,1,1,1,1,1,1), /* 5 */
+    BITMASK32(0,0,0,0,1,1,1,0, 0,0,0,0,1,1,1,1,  /* 6 */
+              0,0,0,0,1,1,1,1, 1,1,1,1,1,1,1,1), /* 7 */
+    BITMASK32(1,1,1,1,1,0,1,1, 1,1,1,1,1,1,1,1,  /* 8 */
+              1,1,1,1,0,0,1,1, 1,1,1,1,1,1,1,1), /* 9 */
+    BITMASK32(1,1,1,1,1,0,1,1, 1,1,1,1,1,1,1,1,  /* a */
+              0,0,0,0,1,1,1,1, 1,1,1,1,1,1,1,1), /* b */
+    BITMASK32(0,0,0,0,0,1,1,1, 1,1,1,1,1,1,0,0,  /* c */
+              1,1,0,0,1,1,0,0, 0,0,0,1,1,1,1,1), /* d */
+    BITMASK32(0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,  /* e */
+              1,1,1,1,0,1,1,1, 0,0,0,0,0,0,0,0)  /* f */
+};
+#define CHECK_MODRM38(v) CHECK_TABLE(modrm38_t, v)
 
 /* CHECK_MODRM2 */
 const static unsigned int modrm2_t[] = {

@@ -131,7 +131,7 @@ static void disasm_section(bfd *b, asection *section, PTR data) {
 	/* disassemble the current section */
 	while(bytes < info.buffer_length) {
 		/* call libopcodes disassembler */
-		memset(&curr_insn, 0, sizeof(struct asm_insn));
+		memset(&curr_insn, 0, sizeof(curr_insn));
 		libopcodes_length = (*disassemble_fn)(info.buffer_vma + bytes, &info);
 		/* call liblend disassembler */
 		liblend_length = length_disasm(&info.buffer[bytes], mode);
