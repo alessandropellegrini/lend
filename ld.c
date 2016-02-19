@@ -29,6 +29,7 @@ unsigned int length_disasm(void *opcode0, char mode) {
     unsigned int msize = 0, dsize = 0;
 
     unsigned char op, modrm, mod, rm, rex = 0;
+    unsigned char multibyte = 0;
 
 prefix:
     op = *opcode++;
@@ -51,6 +52,7 @@ prefix:
     /* two and three byte opcode */
     if (CHECK_0F(op)) {
 	    op = *opcode++;
+	    multibyte = 1;
 
 	    /* Three-byte 38 table */
 	    if(CHECK_38(op)) {
@@ -86,16 +88,13 @@ prefix:
         modrm = *opcode++;
         mod = modrm & 0xc0;
         rm  = modrm & 0x07;
-        printf("HAS MODRM - mod: %02x - rm: %02x\n", mod, rm);
         if (mod != 0xc0) {
             if (mod == 0x40) msize++;
             if (mod == 0x80) msize += mdef;
 	    if (mdef == 2 && mode == MODE_X32) {
-		printf("mdef is 2\n");
                 if ((mod == 0x00) && (rm == 0x06)) msize += 2;
             } else {
                 if (rm == 0x04) {
-			printf("HAS SIB\n");
 			rm = *opcode++ & 0x07; /* rm is the sib */
 		}
                 if (rm == 0x05 && mod == 0x00) {
@@ -107,7 +106,7 @@ prefix:
     }
 
     /* REX.W causes 66h to be ignored */
-    if (CHECK_REXW(rex)) {
+    if (CHECK_REXW(rex) && !multibyte) {
         if(CHECK_IMM64(op)) dsize = 8;
         if(CHECK_OFF64(op)) msize = 8;
     }
