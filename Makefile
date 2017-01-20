@@ -26,7 +26,7 @@ library: $(LIB_OBJ)
 	ar -cvq liblend.a $(LIB_OBJ)
 
 test: $(TEST_OBJ)
-	$(CC) $(TEST_OBJ) -L . -llend -lbfd -lopcodes -liberty -lz -ldl -lintl -o ldtest
+	$(CC) $(TEST_OBJ) -L . -llend -lbfd -lopcodes -liberty -lz -ldl -o ldtest
 
 clean:
 	rm -f $(TEST_OBJ) $(LIB_OBJ) liblend.a

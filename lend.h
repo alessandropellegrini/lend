@@ -18,10 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#include <stdbool.h>
+
+extern __thread bool _rip_relative;
 
 /* Switch between 32-bit and 64-bit implementations */
 #define MODE_X32	1
 #define MODE_X64	2
+
+#define has_rip_relative() (_rip_relative == true)
 
 /* length_disasm */
 unsigned int length_disasm(void *opcode0, char mode);

@@ -160,11 +160,15 @@ static void disasm_section(bfd *b, asection *section, PTR data) {
 		for(i = 0; i < libopcodes_length; i++) {
 			printf("%02x ", info.buffer[bytes + i]);
 		}
+		printf("\t\t");
 		if(libopcodes_length != liblend_length) {
 			printf("\e[0m ");
-			printf("[expected: %d - found: %d] - ", libopcodes_length, liblend_length);
-			print_insn();
+			printf("[expected: %d - found: %d]\t", libopcodes_length, liblend_length);
 		}
+		if(has_rip_relative()) {
+			printf("RIP Relative\t");
+		}
+		print_insn();
 		printf("\n");
 
 		bytes += libopcodes_length;

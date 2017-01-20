@@ -16,9 +16,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <stdbool.h>
 
 #include "lend.h"
 #include "ld.h"
+
+__thread bool _rip_relative;
 
 /* length_disasm */
 unsigned int length_disasm(void *opcode0, char mode) {
@@ -28,8 +31,10 @@ unsigned int length_disasm(void *opcode0, char mode) {
     unsigned int ddef = 4, mdef = 4;
     unsigned int msize = 0, dsize = 0;
 
-    unsigned char op, modrm, mod, rm, rex = 0;
+    unsigned char first_op, op, modrm, mod, rm, rex = 0;
     unsigned char multibyte = 0;
+
+    _rip_relative = false;
 
 prefix:
     op = *opcode++;
@@ -48,6 +53,8 @@ prefix:
 	    rex = op;
 	    goto prefix;
     }
+
+    first_op = op;
 
     /* two and three byte opcode */
     if (CHECK_0F(op)) {
@@ -104,6 +111,9 @@ prefix:
 		}
             }
         }
+	if(mode == MODE_X64 && first_op != 0xff && mod == 0x00 && rm == 0x05) {
+		_rip_relative = true;
+	}
     }
 
     /* REX.W causes 66h to be ignored */
