@@ -96,6 +96,7 @@ prefix:
         modrm = *opcode++;
         mod = modrm & 0xc0;
         rm  = modrm & 0x07;
+
         if (mod != 0xc0) {
             if (mod == 0x40) msize++;
             if (mod == 0x80) msize += mdef;
@@ -110,10 +111,16 @@ prefix:
 			else msize += 4;
 		}
             }
-        }
-	if(mode == MODE_X64 && first_op != 0xff && mod == 0x00 && rm == 0x05) {
-		_rip_relative = true;
-	}
+	    if(mode == MODE_X64 && first_op != 0xff && mod == 0x00 && rm == 0x05) {
+			_rip_relative = true;
+	    }
+		
+	 } else {
+		if(op == 0x70) { /* TODO: need another table here! */
+			/* Three operands instruction (SSE extension) */
+			dsize = 1;
+		}
+	 }
     }
 
     /* REX.W causes 66h to be ignored */

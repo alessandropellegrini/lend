@@ -1,3 +1,4 @@
+pshufd $0x0,%xmm0,%xmm0
 sub    $0x28,%rsp
 lea    0xa3875(%rip),%rcx
 callq  1004
